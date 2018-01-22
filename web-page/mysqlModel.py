@@ -1,4 +1,5 @@
 # -*- coding = utf8 -*-
+# version = 2.7
 # pymysqlModel:insert del update select
 
 import time
