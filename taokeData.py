@@ -117,9 +117,9 @@ def getModel(cId,token='',cookieInfo=''):
 conn = pymysql.Connect(
     host = '',
     port = 3306,
-    user = ' ',
-    passwd = ' ',
-    db = ' ',
+    user = '',
+    passwd = '',
+    db = '',
     charset = 'utf8'
 )
 
