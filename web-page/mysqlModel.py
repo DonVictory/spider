@@ -1,10 +1,9 @@
 # -*- coding = utf8 -*-
 # pymysqlModel:insert del update select
+
 import time
-
-__authro__ = 'Drw'
-
 import pymysql
+__authro__ = 'Drw'
 
 class mysqlModel(object):
     # init
