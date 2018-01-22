@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # py-verson = 3.6
+__author__ = 'Drw'
 import time
 import json
 import hashlib
