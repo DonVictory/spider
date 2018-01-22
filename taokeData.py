@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# py-verson = 3.6
 import time
 import json
 import hashlib
