@@ -115,11 +115,11 @@ def getModel(cId,token='',cookieInfo=''):
 
 #连接数据库，取数据
 conn = pymysql.Connect(
-    host = 'rm-uf6l2i400pxdeb8eyo.mysql.rds.aliyuncs.com',
+    host = '',
     port = 3306,
-    user = 'taoke',
-    passwd = 'mc9x8VgSUi',
-    db = 'taoke',
+    user = ' ',
+    passwd = ' ',
+    db = ' ',
     charset = 'utf8'
 )
 
