@@ -7,6 +7,7 @@ import urllib
 import gzip
 import time
 import json
+#from cStringIO import StringIO TODO:PY2.7-Supported
 
 class tools(object):
 
@@ -39,7 +40,6 @@ class tools(object):
 
     # Unzip the gzip file
     def unzipFiles(self,gzipData):
-        from cStringIO import StringIO # TODO: PY2.7 - Supported
         try:
             buffer = StringIO(gzipData)
             unGzipData = gzip.GzipFile(mode='rb',fileobj=buffer)
@@ -78,6 +78,10 @@ class tools(object):
             elif type== 'timestamp':
                 return (time.strftime('%Y-%m-%d',time.localtime(timeValue)),time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(timeValue))),True
             elif type == 'dateTime':
+                if not append:
+                    timeValue += ' 00:00:00'
+                else:
+                    timeValue += " "+append
                 return (int(time.mktime(time.strptime(timeValue, "%Y-%m-%d %H:%M:%S")))),True
             else:
                 return 0,False
