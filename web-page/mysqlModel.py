@@ -64,13 +64,7 @@ class mysqlmodel(object):
             print(str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())) + '--' + str(e))
             return False
 
-    # __close__
-    def close(self):
-        self.cursor.close()
-        self.conn.close()
-
     # __del__
-
     def __del__(self):
         self.cursor.close()
         self.conn.close()
