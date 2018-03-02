@@ -1,125 +1,130 @@
-# -*- conding = UTF-8 -*-
-# author: Drw
-# 2018.3.2
-
+# -*- coding:UTF-8 -*-
 import time
+import json
 import hashlib
-from http import cookiejar
+import pymysql
+import socket
+import urllib.parse
 from urllib import request
-from urllib import parse
+from http import cookiejar
 
-class taoBaoCrawler(object):
+class taoBaoTouTiao(object):
+    def __init__(self):
+        pass
 
-    def __init__(self,apiUrl,conf=dict(),headers=dict(),proxy=dict()):
-        if apiUrl and len(conf) and len(headers):
-            print("Proccess loading..")
-            self.apiUrl = apiUrl
-            self.conf = conf
-            self.headers = headers
-            self.proxy = proxy
+def md5(var):
+    try:
+        md5Var = hashlib.md5()
+        md5Var.update(var.encode(encoding='utf-8'))
+        return  md5Var.hexdigest()
+    except Exception as e:
+        return e
+
+def cookie(url):
+    try:
+        cookie = cookiejar.CookieJar()
+        handler = request.HTTPCookieProcessor(cookie)
+        opener = request.build_opener(handler)
+        response = opener.open(url)
+        if len(cookie._cookies.values()) > 0:
+            return cookie
         else:
-            print("Parms errors!")
-            exit(0)
-    # 代理
-    def proxy(self):
-        # 代理服务器
-        proxyHost = "http-dyn.abuyun.com"  # ""http-pro.abuyun.com"
-        proxyPort = "9020"  # "9010"
-        # 代理隧道验证信息
-        proxyUser = "H36BH9760325S21D"
-        proxyPass = "A22EAE41B499623C"
-        proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
-            "host": proxyHost,
-            "port": proxyPort,
-            "user": proxyUser,
-            "pass": proxyPass,
-        }
-        proxy_handler = request.ProxyHandler({
-            "http": proxyMeta,
-            "https": proxyMeta,
-        })
-        openner = request.build_opener(proxy_handler)
-        return openner
+            return ''
+    except Exception as e:
+        return e
 
-    # MD5
-    def md5(self,var):
+def tokenFunc(cookies):
+    try:
+        cookieKeyValue = ''
+        token = ''
+        if len(cookies)!=0:
+            for cookie in cookies:
+                cookieKeyValue += cookie.name + '=' + cookie.value + ';'
+                if cookie.name == '_m_h5_tk':
+                    token = cookie.value.split('_')[0]
+                else:
+                    continue
+            if not token:
+                return None,None
+            else:
+                return token,cookieKeyValue
+        return None, None
+    except Exception as e:
+        return e,None
+
+def printLog(log):
+    now = str(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()))
+    print(now+', error:'+log)
+    exit(0)
+
+url = 'https://h5api.m.taobao.com/h5/mtop.taobao.hlservice.feed.list/1.0/?'
+def touTiao(indexUrl,tokenValue = None,cookiesValue = None):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 5.1.1; Nexus 6 Build/LYZ28E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.23 Mobile Safari/537.36',
+        'Referer': 'https://market.m.taobao.com/apps/market/toutiao/portal.html?wh_weex=true&data_perfetch=true',
+        'Host': 'h5api.m.taobao.com',
+        'Accept': '*/*',
+        'Connection': 'Keep-Alive',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'zh-CN,zh;q=0.8',
+        'Content-type': 'application/json'
+    }
+    data = "{\"app\":\"tbc\",\"version\":\"17.0\",\"userType\":1,\"action\":\"1\",\"columnId\":\"0\"}" #get中的data
+    token = str(tokenValue)
+    timestamp = str(int(round(time.time()*1000)))
+    appKey = '12574478'
+    jsv = '2.4.2'
+    signData = token + '&' + timestamp + '&' + appKey + '&' + data
+    sign = md5(var=signData)
+    urlParms = {}
+    urlParms['jsv'] = jsv
+    urlParms['appKey'] = appKey
+    urlParms['t'] = timestamp
+    urlParms['sign'] = sign
+    urlParms['api'] = 'mtop.taobao.hlservice.feed.list'
+    urlParms['v'] = '1.0'
+    urlParms['AntiCreep'] = 'true'
+    urlParms['timeout'] = 5000
+    urlParms['type'] = 'jsonp'
+    urlParms['dataType'] = 'jsonp'
+    urlParms['callback'] = 'mtopjsonp'
+    urlParms['data'] = data
+    urlQuery = urllib.parse.urlencode(urlParms)
+    url = "https://h5api.m.taobao.com/h5/mtop.taobao.hlservice.feed.list/1.0/?%s" % urlQuery
+    print(url)
+    cookies = cookie(url=url)
+    tokenValue, cookieKeyValue = tokenFunc(cookies=cookies)
+    print(cookieKeyValue)
+    # printLog(log='获取token出错')
+    if not cookieKeyValue:
+        cookies = cookie(url=url)
+        tokenValue, cookieKeyValue = tokenFunc(cookies=cookies)
+        return touTiao(indexUrl=indexUrl,tokenValue=token,cookiesValue=cookieKeyValue)
+    else:
         try:
-            md5Var = hashlib.md5()
-            md5Var.update(var.encode(encoding='utf-8'))
-            return md5Var.hexdigest()
+            headers['Cookie'] = cookieKeyValue
+            req = urllib.request.Request(url=url, headers=headers)
+            response = urllib.request.urlopen(req)
+            responseInfo = response.read()
+            responseStr = str(responseInfo)
+            print(responseStr)
+            if responseStr.find('FAIL_SYS_TOKEN_EMPTY')!=-1 or responseStr.find('TOKEN_EXPIRED') != -1 or \
+                    responseStr.find('FAIL_SYS_ILLEGAL_ACCESS') != -1 or responseStr.find('SESSION_EXPIRED') != -1:
+                time.sleep(0.2)
+                cookies = cookie(url=url)
+                tokenValue, cookieKeyValue = tokenFunc(cookies=cookies)
+                return touTiao(indexUrl=indexUrl, tokenValue=tokenValue, cookiesValue=cookieKeyValue)
+            else:
+                import gzip
+                dataInfo = gzip.decompress(responseInfo).decode("utf-8")
+                print(dataInfo)
+                return dataInfo
         except Exception as e:
+            import sys
+            s = sys.exc_info()
+            print("Error '%s' happened on line %d" % (s[1],s[2].tb_lineno))
             return e
 
-    # 获取cookie
-    def cookie(self,url):
-        try:
-            cookie = cookiejar.CookieJar()
-            handler = request.HTTPCookieProcessor(cookie)
-            opener = request.build_opener(handler)
-            response = opener.open(url)
-            if len(cookie._cookies.values()) > 0:
-                return cookie
-            else:
-                return ''
-        except Exception as e:
-            self.errLog(e)
-
-    # 获取token
-    def token(self,cookies):
-        try:
-            cookieKeyValue = ''
-            token = ''
-            if len(cookies) != 0:
-                for cookie in cookies:
-                    cookieKeyValue += cookie.name + '=' + cookie.value + ';'
-                    if cookie.name == '_m_h5_tk':
-                        token = cookie.value.split('_')[0]
-                    else:
-                        continue
-                if not token:
-                    return None, None
-                else:
-                    return token, cookieKeyValue
-            return None, None
-        except Exception as e:
-            return e, None
-
-    # 打印错误
-    def errLog(self,e):
-        import sys
-        s = sys.exc_info()
-        print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
-        print(e)
-
-    # 爬虫主程序
-    def crawler(self,token,cookie):
-        try:
-            t = str(int(time.time()*1000))
-            signPre = "%s&%s&%s&%s" % (token,t,self.conf['appKey'],self.conf['data'])
-            sign = self.md5(signPre)
-            self.conf['t'] = t
-            self.conf['sign'] = sign
-            apiUrl = self.apiUrl+parse.urlencode(self.conf)
-            if not cookie:
-                token,cookie = self.token(self.cookie(url=apiUrl))
-                return self.crawler(token=token,cookie=cookie)
-            else:
-                request.install_opener(self.proxy())
-                reqHandler = request.Request(url=apiUrl,headers=self.headers)
-                response = request.urlopen(reqHandler)
-                rs = response.read()
-                checkError = str(rs)
-                if checkError.find("FAIL_SYS_TOKEN_EMPTY") !=-1 or checkError.find("TOKEN_EXPIRED")!=-1 \
-                        or checkError.find("FAIL_SYS_ILLEGAL_ACCESS")!=-1 or checkError.find("FAIL_SYS_ILLEGAL_ACCESS")!=-1:
-                    time.sleep(0.5)
-                    token, cookie = self.token(self.cookie(url=apiUrl))
-                    return self.crawler(token=token, cookie=cookie)
-                else:
-                    try:
-                        import gzip
-                        data = gzip.decompress(rs).decode('utf-8')
-                    except:
-                        data = rs.decode('utf-8')
-                    return data
-        except Exception as e:
-            self.errLog(e)
+indexUrl = 'https://h5api.m.taobao.com/h5/mtop.taobao.hlservice.feed.list/1.0/?'
+resVar = touTiao(indexUrl=indexUrl,tokenValue='',cookiesValue='')
+print(resVar)
