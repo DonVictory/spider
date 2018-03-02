@@ -62,7 +62,7 @@ class taoBaoCrawler(object):
             else:
                 return ''
         except Exception as e:
-            return e
+            self.errLog(e)
 
     # 获取token
     def token(self,cookies):
@@ -95,12 +95,13 @@ class taoBaoCrawler(object):
     def crawler(self,token,cookie):
         try:
             t = str(int(time.time()*1000))
-            signPre = "%s%s%s%s" % (token,t,self.conf['appKey'],self.conf['data'])
+            signPre = "%s&%s&%s&%s" % (token,t,self.conf['appKey'],self.conf['data'])
             sign = self.md5(signPre)
+            self.conf['t'] = t
             self.conf['sign'] = sign
             apiUrl = self.apiUrl+parse.urlencode(self.conf)
             if not cookie:
-                token,cookie = self.cookie(url=apiUrl)
+                token,cookie = self.token(self.cookie(url=apiUrl))
                 return self.crawler(token=token,cookie=cookie)
             else:
                 request.install_opener(self.proxy())
@@ -111,7 +112,7 @@ class taoBaoCrawler(object):
                 if checkError.find("FAIL_SYS_TOKEN_EMPTY") !=-1 or checkError.find("TOKEN_EXPIRED")!=-1 \
                         or checkError.find("FAIL_SYS_ILLEGAL_ACCESS")!=-1 or checkError.find("FAIL_SYS_ILLEGAL_ACCESS")!=-1:
                     time.sleep(0.5)
-                    token, cookie = self.cookie(url=apiUrl)
+                    token, cookie = self.token(self.cookie(url=apiUrl))
                     return self.crawler(token=token, cookie=cookie)
                 else:
                     try:
