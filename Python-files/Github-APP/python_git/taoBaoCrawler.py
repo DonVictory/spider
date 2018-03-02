@@ -122,10 +122,3 @@ class taoBaoCrawler(object):
                     return data
         except Exception as e:
             self.errLog(e)
-
-
-
-
-
-
-
