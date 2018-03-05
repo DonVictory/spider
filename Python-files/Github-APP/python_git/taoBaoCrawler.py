@@ -27,7 +27,7 @@ class taoBaoCrawler(object):
         proxyPort = "9020"  # "9010"
         # 代理隧道验证信息
         proxyUser = "H36BH9760325S21D"
-        proxyPass = "A22EAE41B499623C"
+        proxyPass = ""
         proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
             "host": proxyHost,
             "port": proxyPort,
