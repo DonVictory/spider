@@ -9,14 +9,16 @@ from urllib import request
 from urllib import parse
 
 class taoBaoCrawler(object):
-
-    def __init__(self,apiUrl,conf=dict(),headers=dict(),proxy=dict()):
+    apiUrl = ''
+    conf = {}
+    header = {}
+    tokenParms = {}
+    def __init__(self,apiUrl,conf={},headers={}):
         if apiUrl and len(conf) and len(headers):
-            print("Proccess loading..")
+            print("Proccess loading...")
             self.apiUrl = apiUrl
             self.conf = conf
             self.headers = headers
-            self.proxy = proxy
         else:
             print("Parms errors!")
             exit(0)
@@ -76,11 +78,7 @@ class taoBaoCrawler(object):
                         token = cookie.value.split('_')[0]
                     else:
                         continue
-                if not token:
-                    return None, None
-                else:
-                    return token, cookieKeyValue
-            return None, None
+            return token, cookieKeyValue
         except Exception as e:
             return e, None
 
@@ -105,13 +103,14 @@ class taoBaoCrawler(object):
                 return self.crawler(token=token,cookie=cookie)
             else:
                 request.install_opener(self.proxy())
+                self.headers['Cookie'] = cookie
                 reqHandler = request.Request(url=apiUrl,headers=self.headers)
                 response = request.urlopen(reqHandler)
                 rs = response.read()
                 checkError = str(rs)
                 if checkError.find("FAIL_SYS_TOKEN_EMPTY") !=-1 or checkError.find("TOKEN_EXPIRED")!=-1 \
-                        or checkError.find("FAIL_SYS_ILLEGAL_ACCESS")!=-1 or checkError.find("FAIL_SYS_ILLEGAL_ACCESS")!=-1:
-                    time.sleep(0.5)
+                        or checkError.find("FAIL_SYS_ILLEGAL_ACCESS")!=-1 or checkError.find("FAIL_SYS_SESSION_EXPIRED")!=-1:
+                    time.sleep(0.2)
                     token, cookie = self.token(self.cookie(url=apiUrl))
                     return self.crawler(token=token, cookie=cookie)
                 else:
@@ -123,3 +122,31 @@ class taoBaoCrawler(object):
                     return data
         except Exception as e:
             self.errLog(e)
+            time.sleep(0.2)
+            token, cookie = self.token(self.cookie(url=apiUrl))
+            return self.crawler(token=token, cookie=cookie)
+
+    def forToken(self,token,cookie,contentId): # 获取token
+        try:
+            tmpConf = self.conf
+            data = "{\"contentId\":\"%s\",\"type\":\"weex\",\"source\":\"youhh_h5\",\"frontModuleName\":\"recommendContent\",\"params\":\"{\\\"csid\\\":\\\"7074d46e5ce8c18701ec01ff71d9037d\\\"}\"}" % contentId
+            t = str(int(time.time()*1000))
+            signPre = "%s&%s&%s&%s" % (self.token,t,self.conf['appKey'],data)
+            sign = self.md5(signPre)
+            self.conf['t'] = t
+            self.conf['sign'] = sign
+            tmpConf = self.conf
+            tmpConf['data'] = data
+            tmpConf['api'] =  "mtop.taobao.beehive.detail.contentservicenewv2"
+            apiUrl = "https://h5api.m.taobao.com/h5/mtop.taobao.beehive.detail.contentservicenewv2/1.0/?"
+            apiUrl += parse.urlencode(tmpConf)
+            if not cookie and not token:
+                token,cookie = self.token(self.cookie(url=apiUrl))
+                return token,cookie
+            else:
+                return token,cookie
+        except Exception as e:
+            self.errLog(e)
+            time.sleep(0.2)
+            token, cookie = self.token(self.cookie(url=apiUrl))
+            return self.crawler(token=token, cookie=cookie)
